@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Login</title>
+
+    <!-- Element UI -->
+    <link rel="stylesheet" href="../static/element-ui/lib/theme-chalk/index.css">
+    <script src="../static/JS/vue.js"></script>
+    <script src="../static/element-ui/lib/index.js"></script>
+    <script src="../static/axios/dist/axios.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            margin: 0;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+            background-size: 400% 400%;
+            background-attachment: fixed;
+            animation: gradientShift 15s ease infinite;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 动态渐变背景动画 */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 网格背景 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        /* 粒子效果容器 */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: float 15s infinite;
+            box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+
+        #app {
+            width: 450px;
+            padding: 50px 40px;
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.1),
+                0 0 20px rgba(0, 0, 0, 0.05);
+            color: #333;
+            position: relative;
+            z-index: 10;
+            animation: fadeInUp 0.8s ease-out;
+            overflow: hidden;
+        }
+
+        /* 登录框内部光效 - 移除或改为浅色 */
+        #app::after {
+            display: none;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 光晕效果 */
+        #app::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .login-title {
+            font-size: 42px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        /* 标题样式 */
+        .login-title span:first-child {
+            color: #333;
+            letter-spacing: 2px;
+        }
+        .login-title span:last-child {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin-left: 8px;
+            box-shadow: 
+                0 4px 15px rgba(102, 126, 234, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-title span:last-child::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        /* 切换按钮容器 */
+        .tab-buttons {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .tab-buttons .el-button {
+            margin: 0 8px;
+            padding: 12px 35px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 输入框 */
+        .el-input__inner {
+            background: #f5f5f5 !important;
+            border: 1px solid #dcdfe6 !important;
+            color: #333 !important;
+            height: 48px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .el-input__inner::placeholder {
+            color: #999 !important;
+        }
+
+        .el-input__inner:focus {
+            border-color: #409EFF !important;
+            box-shadow: 
+                0 0 0 2px rgba(64, 158, 255, 0.2) !important;
+            background: #fff !important;
+        }
+
+        /* 按钮 */
+        .el-button--primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border: none !important;
+            color: white !important;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            height: 48px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow:
+                0 4px 15px rgba(102, 126, 234, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+
+        .el-button--primary:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 6px 20px rgba(102, 126, 234, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .el-button--primary:active {
+            transform: translateY(0);
+        }
+
+        /* 表单标签 */
+        .el-form-item__label {
+            color: rgba(255, 255, 255, 0.9) !important;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 普通按钮样式 */
+        .el-button:not(.el-button--primary) {
+            color: #606266 !important;
+            border-color: #dcdfe6 !important;
+            background: #fff !important;
+        }
+
+        .el-button:not(.el-button--primary):hover {
+            color: #409EFF !important;
+            border-color: #c6e2ff !important;
+            background: #ecf5ff !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(64, 158, 255, 0.2);
+        }
+
+        /* 表单动画 */
+        .el-form {
+            animation: slideIn 0.5s ease-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 表单项 - 输入框居中 */
+        .el-form-item {
+            width: 100%;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .el-form-item__content {
+            display: flex !important;
+            justify-content: center !important;
+            flex: 1;
+            margin-left: 0 !important;
+        }
+
+        .el-form-item__label {
+            display: none !important;
+        }
+
+        .el-input {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Element UI Message 提示框样式 - 科技感主题 */
+        .el-message {
+            background: rgba(30, 30, 50, 0.9) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border: 1px solid rgba(102, 126, 234, 0.5) !important;
+            border-radius: 12px !important;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 20px rgba(102, 126, 234, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+            color: #fff !important;
+            padding: 15px 20px !important;
+            min-width: 300px !important;
+            animation: messageSlideIn 0.4s ease-out !important;
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        .el-message--success {
+            border-color: rgba(103, 194, 58, 0.6) !important;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 20px rgba(103, 194, 58, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .el-message--error {
+            border-color: rgba(245, 108, 108, 0.6) !important;
+            box-shadow:
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                0 0 20px rgba(245, 108, 108, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .el-message__icon {
+            color: #fff !important;
+            font-size: 20px !important;
+        }
+
+        .el-message--success .el-message__icon {
+            color: #67c23a !important;
+            text-shadow: 0 0 10px rgba(103, 194, 58, 0.8) !important;
+        }
+
+        .el-message--error .el-message__icon {
+            color: #f56c6c !important;
+            text-shadow: 0 0 10px rgba(245, 108, 108, 0.8) !important;
+        }
+
+        .el-message__content {
+            color: rgba(255, 255, 255, 0.95) !important;
+            font-size: 14px !important;
+            font-weight: 500 !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .el-message__closeBtn {
+            color: rgba(255, 255, 255, 0.6) !important;
+        }
+
+        .el-message__closeBtn:hover {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        /* Message 关闭动画 */
+        .el-message.fade-leave-active {
+            animation: messageFadeOut 0.3s ease-in !important;
+        }
+
+        @keyframes messageFadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 粒子效果 -->
+    <div class="particles" id="particles"></div>
+
+<div id="app">
+
+    <div class="login-title">
+        <span>Sanxia</span><span>un</span>
+    </div>
+
+    <!-- 切换按钮 -->
+    <div class="tab-buttons">
+        <el-button
+            :type="isLogin ? 'primary' : ''"
+            @click="isLogin = true"
+            :plain="!isLogin">
+            登录
+        </el-button>
+        <el-button
+            :type="!isLogin ? 'primary' : ''"
+            @click="isLogin = false"
+            :plain="isLogin">
+            注册
+        </el-button>
+    </div>
+
+    <!-- 登录表单 -->
+    <el-form v-if="isLogin" :model="form" ref="loginForm" label-width="0" status-icon>
+        <el-form-item prop="username"
+                      :rules="[{ required: true, message: '请输入用户名', trigger: 'blur' }]">
+            <el-input v-model="form.username" placeholder="用户名"></el-input>
+        </el-form-item>
+
+        <el-form-item prop="password"
+                      :rules="[{ required: true, message: '请输入密码', trigger: 'blur' }]">
+            <el-input type="password" v-model="form.password" placeholder="密码"></el-input>
+        </el-form-item>
+
+        <el-form-item>
+            <el-button type="primary" style="width: 100%;" @click="handleLogin">登录</el-button>
+        </el-form-item>
+    </el-form>
+
+    <!-- 注册表单 -->
+    <el-form v-else :model="registerForm" ref="registerForm" label-width="0" status-icon>
+        <el-form-item prop="username"
+                      :rules="[{ required: true, message: '请输入用户名', trigger: 'blur' }]">
+            <el-input v-model="registerForm.username" placeholder="用户名"></el-input>
+        </el-form-item>
+
+        <el-form-item prop="password"
+                      :rules="[{ required: true, message: '请输入密码', trigger: 'blur' }]">
+            <el-input type="password" v-model="registerForm.password" placeholder="密码"></el-input>
+        </el-form-item>
+
+        <el-form-item prop="confirmPassword"
+                      :rules="[
+                          { required: true, message: '请再次输入密码', trigger: 'blur' },
+                          { validator: validateConfirmPassword, trigger: 'blur' }
+                      ]">
+            <el-input type="password" v-model="registerForm.confirmPassword" placeholder="确认密码"></el-input>
+        </el-form-item>
+
+        <el-form-item>
+            <el-button type="primary" style="width: 100%;" @click="handleRegister">注册</el-button>
+        </el-form-item>
+    </el-form>
+
+</div>
+
+<script>
+// 创建粒子效果
+function createParticles() {
+    const particlesContainer = document.getElementById('particles');
+    const particleCount = 50;
+
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 15 + 's';
+        particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+        particlesContainer.appendChild(particle);
+    }
+}
+
+// 页面加载时创建粒子
+window.addEventListener('load', createParticles);
+
+new Vue({
+    el: "#app",
+    data() {
+        return {
+            isLogin: true, // 控制显示登录还是注册表单
+            form: {
+                username: 'admin',
+                password: '111'
+            },
+            registerForm: {
+                username: '',
+                password: '',
+                confirmPassword: ''
+            }
+        }
+    },
+    methods: {
+        handleLogin() {//执行登录的函数
+            //发送axios请求
+            axios({
+                url:"http://localhost:8000/login/",//绑定服务器接口的请求路径 --- 针对于自己的业务需求在urls.py找，如果匹配不上会出现404
+                method:"post",//设置请求方式，默认get方式，可选择post、get
+                //JSON.stringify（js对象）方法把js对象转为json字符串，JSON.parse（json字符串）方法把json字符串转为js对象
+                data:JSON.stringify(this.form),//当请求方式为post的时候，用data属性设置客户端给服务器的参数，需要把参数转为json格式
+                headers:{//设置请求头信息
+                    //post请求传递json参数给服务器，需要配置Content-Type为application/json
+                    "Content-type":"application/json"
+                }
+
+            }).then(res =>{
+                //请求成功后执行的代码块
+
+                //console.log(res)
+                //取出code和msg
+                let code = res.data.code;
+                let msg = res.data.msg;
+                //==：值相等就是true，===：值和类型都相等就是true
+                if(code === 200) {
+                    //登陆成功
+                    this.$message.success(msg);
+                    //通过时间延迟函数来实现等一会再执行页面跳转的代码，让login.html中的提示内容得以显示完整
+                    //函数 -- setTimeout（参数一，参数二） --- 参数一就是一个函数，等到参数二这么多的时间后执行 --- 参数二就是等待时间，单位毫秒
+                    sessionStorage.setItem("username",this.form.username);
+                    setTimeout(() =>{
+                    //要在login.html跳转到chat_no_stream.html页面
+                    //技术 --- window.location.href = "请求地址"
+                         window.location.href="http://localhost:8000/goChatNoStream/"
+                    },1000);
+                }else{
+                    //登录失败
+                    this.$message.error(msg);
+                }
+            })
+        },
+        handleRegister() {//执行注册的函数
+            // 先手动验证密码是否一致
+            if (this.registerForm.password !== this.registerForm.confirmPassword) {
+                this.$message.error('两次输入的密码不一致，请重新输入');
+                return;
+            }
+
+            // 验证表单
+            this.$refs.registerForm.validate((valid) => {
+                if (valid) {
+                    // 再次确认密码一致性（双重验证）
+                    if (this.registerForm.password !== this.registerForm.confirmPassword) {
+                        this.$message.error('两次输入的密码不一致，请重新输入');
+                        return;
+                    }
+
+                    //发送axios请求
+                    axios({
+                        url:"http://localhost:8000/register/",//绑定服务器接口的请求路径
+                        method:"post",//设置请求方式
+                        data:JSON.stringify({
+                            username: this.registerForm.username,
+                            password: this.registerForm.password
+                        }),//当请求方式为post的时候，用data属性设置客户端给服务器的参数，需要把参数转为json格式
+                        headers:{//设置请求头信息
+                            //post请求传递json参数给服务器，需要配置Content-Type为application/json
+                            "Content-type":"application/json"
+                        }
+                    }).then(res =>{
+                        //请求成功后执行的代码块
+                        let code = res.data.code;
+                        let msg = res.data.msg;
+                        if(code === 200) {
+                            //注册成功
+                            this.$message.success(msg);
+                            // 清空注册表单
+                            this.registerForm = {
+                                username: '',
+                                password: '',
+                                confirmPassword: ''
+                            };
+                            // 切换到登录表单
+                            setTimeout(() => {
+                                this.isLogin = true;
+                            }, 1000);
+                        }else{
+                            //注册失败
+                            this.$message.error(msg);
+                        }
+                    }).catch(err => {
+                        this.$message.error('注册请求失败，请稍后重试');
+                    });
+                } else {
+                    this.$message.error('请填写完整的注册信息');
+                    return false;
+                }
+            });
+        },
+        validateConfirmPassword(rule, value, callback) {
+            if (value === '') {
+                callback(new Error('请再次输入密码'));
+            } else if (value !== this.registerForm.password) {
+                callback(new Error('两次输入的密码不一致'));
+            } else {
+                callback();
+            }
+        }
+    }
+})
+</script>
+
+</body>
+</html>

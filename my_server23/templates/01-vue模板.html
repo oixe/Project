@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../static/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入 vue.js 资源-->
+    <script src="../static/js/vue.js"></script>
+    <!-- 引入组件库 -->
+    <script src="../static/element-ui/lib/index.js"></script>
+    <!--引入axios-->
+    <script src="../static/axios/dist/axios.js"></script>
+</head>
+<body>
+<!-- 创建vue的对象作用域:后期所有的html代码都放在这个div里面-->
+<div id="app">
+
+</div>
+<!-- js代码-->
+<script>
+    //这里面的代码就是js代码
+    //创建Vue对象 {}里面的内容就是Vue对象的属性和相关代码
+    new Vue({
+        el:"#app",//和作用域建立绑定关系
+        delimiters: ['{{','}}'],//可以定义在作用域中如何访问vue对象的属性。默认{{属性名}}
+        data(){//定义变量的属性，变量定义使用键值对格式 key:value
+            return{//所有的变量定义在return中
+
+            }
+        },
+        methods:{//定义函数的属性，函数定义格式---函数名（形参）{代码块}
+
+        },
+        mounted(){//生命周期函数，写在里面的代码会在页面加载后自动执行
+
+        },
+    });
+</script>
+</body>
+</html>

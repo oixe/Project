@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Demo</title>
+    <link rel="stylesheet" href="../static/element-ui/lib/theme-chalk/index.css">
+    <script src="../static/JS/vue.js"></script>
+    <script src="../static/element-ui/lib/index.js"></script>
+    <script src="../static/marked/marked.min.js"></script>
+    <script src="../static/dompurify/dist/purify.min.js"></script>
+    <script src="../static/axios/dist/axios.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: #f5f5f5;
+        }
+
+        #chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 92.5vh;
+        }
+
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 400px;
+            border-bottom: 1px solid #ddd;
+            background: #f9f9f9;
+        }
+
+        .message {
+            max-width: 70%;
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 8px;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: #409EFF;
+            color: white;
+        }
+
+        .message.assistant {
+            align-self: flex-start;
+            background: #fff;
+            border: 1px solid #ddd;
+            color: black;
+        }
+
+        .message-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            max-width: 70%;
+            margin-bottom: 15px;
+        }
+
+        .message-wrapper .message {
+            margin-bottom: 0;
+        }
+
+        .message-actions {
+            margin-top: 4px;
+            display: flex;
+            justify-content: flex-start;
+            gap: 0;
+        }
+
+        .regenerate-btn,
+        .copy-btn {
+            padding: 4px 12px !important;
+            font-size: 12px !important;
+            height: 28px !important;
+            line-height: 20px !important;
+            border-radius: 4px !important;
+            margin: 0 !important;
+        }
+
+        #input-area {
+            border-top: 1px solid #ddd;
+            padding: 15px 20px;
+            background: #fff;
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .input-wrapper .el-input {
+            flex: 1;
+        }
+
+        .input-wrapper .el-input__inner {
+            border-radius: 24px !important;
+            padding: 12px 20px !important;
+            font-size: 14px !important;
+            border: 1px solid #e0e0e0 !important;
+            height: auto !important;
+            line-height: 1.5 !important;
+        }
+
+        .input-wrapper .el-input__inner:focus {
+            border-color: #409EFF !important;
+        }
+
+        .send-button {
+            width: 48px !important;
+            height: 48px !important;
+            border-radius: 50% !important;
+            padding: 0 !important;
+            background-color: #1a73e8 !important;
+            border: none !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+        }
+
+        .send-button:hover {
+            background-color: #1557b0 !important;
+        }
+
+        .send-button i {
+            color: #fff !important;
+            font-size: 20px !important;
+        }
+
+        .video-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: linear-gradient(90deg, #409EFF, #67C23A);
+    color: white;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.nav-left .el-button,
+.nav-right .el-button {
+    margin-right: 8px;
+}
+
+.welcome-text {
+    margin-right: 10px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* 模型选择框样式 - 与背景融合 */
+.nav-left .el-select {
+    background: rgba(255, 255, 255, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    border-radius: 8px !important;
+}
+
+.nav-left .el-select .el-input__inner {
+    background: transparent !important;
+    border: none !important;
+    color: #ffffff !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    padding: 0 30px 0 12px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+.nav-left .el-select .el-input__inner::placeholder {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.nav-left .el-select .el-input__suffix {
+    color: #ffffff !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    opacity: 0.9 !important;
+}
+
+.nav-left .el-select .el-input__suffix .el-select__caret {
+    color: #ffffff !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+}
+
+.nav-left .el-select:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.nav-left .el-select.is-focus .el-input__inner {
+    border: none !important;
+}
+
+.nav-left .el-select.is-focus {
+    background: rgba(255, 255, 255, 0.35) !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* 模型选择下拉框样式 */
+.model-select-dropdown {
+    padding: 8px 0 !important;
+    min-width: 320px !important;
+}
+
+.model-select-dropdown .el-select-dropdown__item {
+    padding: 0 !important;
+    height: auto !important;
+    line-height: normal !important;
+    white-space: normal !important;
+    position: relative;
+    margin: 4px 12px 4px 12px !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+}
+
+/* 隐藏Element UI默认的label显示，使用自定义内容 */
+.model-select-dropdown .el-select-dropdown__item > span:first-child {
+    display: none !important;
+}
+
+.model-option-content {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 12px !important;
+    transition: all 0.2s ease;
+    background: transparent;
+    box-sizing: border-box;
+}
+
+.model-option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.model-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.model-description {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.6;
+    margin-top: 4px;
+}
+
+.model-option-selected .model-option-content {
+    background-color: #e6f2ff !important;
+    border: 1px solid #409EFF !important;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15) !important;
+}
+
+.model-option-selected .model-name {
+    color: #409EFF;
+    font-weight: 600;
+}
+
+.model-check-icon {
+    color: #409EFF;
+    font-size: 16px;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.model-select-dropdown .el-select-dropdown__item:hover .model-option-content {
+    background-color: #f5f7fa !important;
+}
+
+.model-select-dropdown .model-option-selected:hover .model-option-content {
+    background-color: #d9ecff !important;
+    box-shadow: 0 2px 12px rgba(64, 158, 255, 0.2) !important;
+}
+    </style>
+</head>
+<body>
+<div id="app">
+<!-- 导航栏 -->
+<div class="navbar">
+    <div class="nav-left">
+        <!-- 模型切换下拉框：保留 v-model 高亮，选项单独触发各自跳转方法 -->
+        <el-select 
+            v-model="currentModel" 
+            placeholder="选择模型" 
+            :style="{ width: selectWidth }"
+            popper-class="model-select-dropdown">
+            <el-option
+                label="Ollama非流式"
+                value="ollama_no_stream"
+                :class="{ 'model-option-selected': currentModel === 'ollama_no_stream' }"
+                @click.native="goChatNoStream">
+                <div class="model-option-content">
+                    <div class="model-option-header">
+                        <span class="model-name">Ollama非流式</span>
+                        <i v-if="currentModel === 'ollama_no_stream'" class="el-icon-check model-check-icon"></i>
+                    </div>
+                    <div class="model-description">基于Ollama的非流式输出模型，适合需要完整响应的场景</div>
+                </div>
+            </el-option>
+            <el-option
+                label="Ollama流式"
+                value="ollama_stream"
+                :class="{ 'model-option-selected': currentModel === 'ollama_stream' }"
+                @click.native="goChatStream">
+                <div class="model-option-content">
+                    <div class="model-option-header">
+                        <span class="model-name">Ollama流式</span>
+                        <i v-if="currentModel === 'ollama_stream'" class="el-icon-check model-check-icon"></i>
+                    </div>
+                    <div class="model-description">基于Ollama的流式输出模型，实时显示生成内容</div>
+                </div>
+            </el-option>
+            <el-option
+                label="百炼非流式"
+                value="bl_no_stream"
+                :class="{ 'model-option-selected': currentModel === 'bl_no_stream' }"
+                @click.native="goChatNoStreamBl">
+                <div class="model-option-content">
+                    <div class="model-option-header">
+                        <span class="model-name">百炼非流式</span>
+                        <i v-if="currentModel === 'bl_no_stream'" class="el-icon-check model-check-icon"></i>
+                    </div>
+                    <div class="model-description">百炼平台非流式输出模型，提供高质量完整响应</div>
+                </div>
+            </el-option>
+            <el-option
+                label="百炼流式"
+                value="bl_stream"
+                :class="{ 'model-option-selected': currentModel === 'bl_stream' }"
+                @click.native="goChatStreamBl">
+                <div class="model-option-content">
+                    <div class="model-option-header">
+                        <span class="model-name">百炼流式</span>
+                        <i v-if="currentModel === 'bl_stream'" class="el-icon-check model-check-icon"></i>
+                    </div>
+                    <div class="model-description">百炼平台流式输出模型，快速响应用户需求</div>
+                </div>
+            </el-option>
+        </el-select>
+    </div>
+
+    <div class="nav-right">
+        <span class="welcome-text">欢迎 [{ username }] 登录</span>
+        <el-button type="danger" @click="logout" plain>退出登录</el-button>
+    </div>
+</div>
+    <div id="chat-container">
+        <!-- 消息区 -->
+        <div id="messages">
+            <template v-for="(msg, index) in messages">
+                <!-- AI消息使用包装器，按钮在外部 -->
+                <div v-if="msg.role === 'assistant'" :key="index" class="message-wrapper">
+                    <div class="message" :class="msg.role">
+                        <!-- 文本消息 -->
+                        <div v-if="msg.type === 'text'" v-html="renderMarkdown(msg.content)"></div>
+                    </div>
+                    <!-- 复制/重新输出功能区域 -->
+                    <div v-if="msg.type === 'text' && msg.content !== 'ai正在思考' && hasUserMessageBefore(index)" class="message-actions">
+                        <el-button 
+                            type="text" 
+                            size="mini" 
+                            class="copy-btn"
+                            @click="copyMessage(msg.content)">
+                            <i class="el-icon-document-copy"></i> 复制
+                        </el-button>
+                        <el-button 
+                            type="text" 
+                            size="mini" 
+                            class="regenerate-btn"
+                            @click="regenerateResponse(index)">
+                            <i class="el-icon-refresh"></i> 重新输出
+                        </el-button>
+                    </div>
+                </div>
+                <!-- 用户消息直接显示 -->
+                <div v-else :key="index" class="message" :class="msg.role">
+                    <div v-if="msg.type === 'text'" v-html="renderMarkdown(msg.content)"></div>
+                </div>
+            </template>
+        </div>
+
+        <!-- 输入区 -->
+        <div id="input-area">
+            <div class="input-wrapper">
+                <el-input
+                        v-model="input"
+                        placeholder="向千问提问"
+                        @keydown.enter.native="handleEnterKey"
+                ></el-input>
+                <!-- 发送按钮 -->
+                <el-button class="send-button" @click="sendMessage">
+                    <i class="el-icon-top"></i>
+                </el-button>
+            </div>
+        </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    new Vue({
+        delimiters: ['[{', '}]'],
+        el: '#app',
+        data() {
+            return {
+                input: '',//存贮用户输入问题
+                messages: [//存放用户的问题消息、ai回复的消息
+                    {
+                        // 默认提示，避免流式容器首次为空
+                        role: 'assistant',//表示角色，两种：user表示用户提问,在页面右边显示,assistant表示ai的回复，在页面左边显示
+                        type: 'text',//消息类型
+                        content: "你好，我是流式输出的qwen3-max模型"//用户输入的问题或者式ai的回复
+                    },
+                ],
+                username:"",
+                currentModel: 'bl_stream', // 当前模型，初始值为百炼流式
+                isStreaming: false, // 是否正在流式输出
+                modelList: [ // 统一存放模型配置
+                    {
+                        name: 'Ollama非流式',
+                        value: 'ollama_no_stream',
+                        description: '基于Ollama的非流式输出模型，适合需要完整响应的场景'
+                    },
+                    {
+                        name: 'Ollama流式',
+                        value: 'ollama_stream',
+                        description: '基于Ollama的流式输出模型，实时显示生成内容'
+                    },
+                    {
+                        name: '百炼非流式',
+                        value: 'bl_no_stream',
+                        description: '百炼平台非流式输出模型，提供高质量完整响应'
+                    },
+                    {
+                        name: '百炼流式',
+                        value: 'bl_stream',
+                        description: '百炼平台流式输出模型，快速响应用户需求'
+                    }
+                ]
+            }
+        },
+        computed: {
+            selectWidth() {
+                // 根据当前选中的模型名称长度动态计算宽度
+                const selectedModel = this.modelList.find(m => m.value === this.currentModel);
+                if (selectedModel) {
+                    // 中文字符约14px，英文字符约8px，加上padding和下拉图标
+                    let textWidth = 0;
+                    for (let i = 0; i < selectedModel.name.length; i++) {
+                        const char = selectedModel.name.charAt(i);
+                        // 判断是否为中文字符
+                        if (/[\u4e00-\u9fa5]/.test(char)) {
+                            textWidth += 14;
+                        } else {
+                            textWidth += 8;
+                        }
+                    }
+                    // 基础padding: 左右12px + 下拉图标30px + 额外间距
+                    const calculatedWidth = textWidth + 54;
+                    return calculatedWidth + 'px';
+                }
+                return '150px'; // 默认宽度
+            }
+        },
+        methods: {
+            hasUserMessageBefore(assistantIndex) {
+                // 检查在AI回复之前是否有用户消息
+                for (let i = assistantIndex - 1; i >= 0; i--) {
+                    if (this.messages[i].role === 'user') {
+                        return true;
+                    }
+                }
+                return false;
+            },
+            scrollToBottom() {
+                // DOM 更新完成后再滚动至底部
+                this.$nextTick(() => {
+                    const container = document.getElementById('messages');
+                    container.scrollTop = container.scrollHeight;
+                });
+            },
+            handleEnterKey(event) {
+                // Enter 发送
+                event.preventDefault();
+                if (!this.isStreaming) {
+                    this.sendMessage();
+                }
+            },
+            sendMessage() {
+                if(!this.input.trim()){
+                    return;
+                }
+                let msg = this.input;
+                this.input="";
+                //向MESSAGES数组中，添加一个元素,这个元素的内容就是用户的提问---js中向数组中加入元素使用push方法
+                this.messages.push({"role":"user","type":"text","content":msg});
+                //先向message数组中添加一个回复本次问题的数据用于占位，其中content内容可以给一个友好的提示，等ai回复完成后再把数据替换
+                this.messages.push({"role":"assistant","type":"text","content":"ai正在思考"});
+                //获取数组的最后一个索引
+                let index = this.messages.length - 1;
+                //设置流式输出状态
+                this.isStreaming = true;
+
+                //我们需要发送请求获取服务器响应的流式数据，axios不是很擅长，他需要json格式数据
+                //选择浏览器原生web api请求服务器---fetch(路由,{属性名:属性值}.then(res=>{成功后执行})
+                //使用URLSearchParams对象来存储需要传递给服务器的变量,可以自动编码，无需手动处理
+                let urlSearchParams = new URLSearchParams();
+                urlSearchParams.append("message",msg)
+                fetch(`http://localhost:8000/chatStreamBl/?${urlSearchParams}`,{
+                    method:"GET"
+                }).then(res=>{
+                    //获取reader对象---通过它读取流的数据内容
+                    let reader = res.body.getReader();
+                    //定义转换数据的对象，把uni...转为字符串
+                    let textDecoder = new TextDecoder();
+
+                    //定义拼接数据的字符串
+                    let aiContent = "";
+                    //定义一个函数，用于读取reader对象读取数据，如何把数据显示在页面上 read为函数名
+                    let read = ()=>{
+                        //通过reader对象读取数据---reader.read()函数用于读取数据.then用于处理读取到的内容
+                        //then中的函数形参，done表示数据流是否读取完毕，完毕为true，否则为false
+                        //value就是读取到的流数据
+                        reader.read().then(({done,value})=>{
+                            //检查是否已停止流式输出
+                            if (!this.isStreaming) {
+                                return;
+                            }
+                            //设置终止条件,就是done为true时，表示数据读取完毕
+                            if(done){
+                                //判断读取结束后是否有数据，无数据提示ai没有回复等友好提示
+                                if(!aiContent.trim()){
+                                    Vue.set(this.messages,index,{"role":"assistant","type":"text","content":"AI没有任何回复，请重试"})
+                                }
+                                //重置流式输出状态
+                                this.isStreaming = false;
+                                // 保存对话
+                                this.saveCurrentChat();
+                                return;//读取完毕，结束递归
+                            }
+                            //读取并处理数据
+                            aiContent += textDecoder.decode(value,{stream:true})
+                            //把当前拼接好的aiContent数据显示在页面上
+                            //等价于this.messages[index] = {"role":"assistant","type":"text","content":"aiContent"}
+                            Vue.set(this.messages,index,{"role":"assistant","type":"text","content":aiContent})
+                            //滚动
+                            this.scrollToBottom();
+                            //通过调用read函数,实现数据读取
+                            read();
+                        }).catch(err => {
+                            //处理错误
+                            if (this.isStreaming) {
+                                this.isStreaming = false;
+                            }
+                        });
+
+                    }
+                    read();
+                }).catch(err => {
+                    this.isStreaming = false;
+                });
+            },
+            renderMarkdown(text) {//markdown格式解析
+                const rawHtml = marked.parse(text);
+                return DOMPurify.sanitize(rawHtml);
+            },
+            copyMessage(content) {
+                // 创建一个临时文本区域来复制纯文本内容
+                const textArea = document.createElement('textarea');
+                textArea.value = content;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    this.$message.success('已复制到剪贴板');
+                } catch (err) {
+                    this.$message.error('复制失败，请稍后重试');
+                }
+                document.body.removeChild(textArea);
+            },
+            regenerateResponse(assistantIndex) {
+                // 找到对应的用户消息（在AI回复之前的最后一条用户消息）
+                let userMessage = null;
+                for (let i = assistantIndex - 1; i >= 0; i--) {
+                    if (this.messages[i].role === 'user') {
+                        userMessage = this.messages[i].content;
+                        break;
+                    }
+                }
+                
+                if (!userMessage) {
+                    this.$message.warning('未找到对应的用户消息');
+                    return;
+                }
+                
+                // 删除当前的AI回复
+                this.messages.splice(assistantIndex, 1);
+                
+                // 重新发送请求
+                // 先添加占位消息
+                this.messages.push({"role":"assistant","type":"text","content":"ai正在思考"});
+                let index = this.messages.length - 1;
+                
+                // 发送请求
+                let urlSearchParams = new URLSearchParams();
+                urlSearchParams.append("message", userMessage);
+                fetch(`http://localhost:8000/chatStreamBl/?${urlSearchParams}`, {
+                    method: "GET"
+                }).then(res => {
+                    let reader = res.body.getReader();
+                    let textDecoder = new TextDecoder();
+                    let aiContent = "";
+                    
+                    let read = () => {
+                        reader.read().then(({done, value}) => {
+                            if (done) {
+                                if (!aiContent.trim()) {
+                                    Vue.set(this.messages, index, {"role":"assistant","type":"text","content":"AI没有任何回复，请重试"});
+                                }
+                                return;
+                            }
+                            aiContent += textDecoder.decode(value, {stream: true});
+                            Vue.set(this.messages, index, {"role":"assistant","type":"text","content": aiContent});
+                            this.scrollToBottom();
+                            read();
+                        });
+                    }
+                    read();
+                });
+            },
+            goChatNoStream(){
+                window.location.href = "http://localhost:8000/goChatNoStream/";
+            },
+            goChatStream(){
+                window.location.href = "http://localhost:8000/goChatStream/";
+            },
+            goChatNoStreamBl(){
+                window.location.href = "http://localhost:8000/goChatNoStreamBl/";
+            },
+            goChatStreamBl(){
+                window.location.href = "http://localhost:8000/goChatStreamBl/";
+            },
+            logout(){
+                sessionStorage.clear();
+                setTimeout(()=>{
+                    window.location.href = "http://localhost:8000/";
+                },1000)
+            }
+        },
+        mounted() {
+            this.username = sessionStorage.getItem("username");
+    }
+    });
+</script>
+</body>
+</html>
